@@ -20,7 +20,6 @@ Goal: get a **bare-bones environment running**.
 
 ### 📂 Project Structure
 ```
-
 RediServe/
 ├── pom.xml                   # Parent Maven POM (manages versions + dependency management)
 ├── config-repo/              # Centralized configs (picked up by Spring Cloud Config Server)
@@ -31,8 +30,7 @@ RediServe/
 │   ├── cache-gateway/        # Entrypoint for clients (talks to Redis + DB fetcher)
 │   └── db-fetcher/           # Fetches from Postgres, source of truth for data
 └── docker-compose.yml        # Infra: Redis + Postgres
-
-````
+```
 
 ---
 
@@ -50,7 +48,7 @@ Bring up Postgres & Redis:
 
 ```bash
 docker compose up -d
-````
+```
 
 Check running containers:
 
@@ -121,7 +119,9 @@ http://localhost:8888/db-fetcher/default
 * [x] Centralized config files in `config-repo/`
 * [x] `db-fetcher` exposes REST endpoint to fetch products from Postgres
 * [x] `cache-gateway` fetches from Redis, falls back to `db-fetcher` on cache-miss
-* [x] Redis caching with TTL (60s, configurable)
+* [x] Redis caching with **type-safe serialization** using `GenericJackson2JsonRedisSerializer`
+* [x] Old Redis entries cleared or handled gracefully to prevent UTF-32 / serialization errors
+* [x] TTL is **configurable per namespace/entity** via policy registry
 * [x] Health endpoints exposed (`/actuator/health`)
 
 ---
@@ -129,9 +129,9 @@ http://localhost:8888/db-fetcher/default
 ## 🏗️ Next Steps (Phase 2)
 
 * Add **orchestrator service** for managing cache policies
-* Make TTLs configurable per entity via config-repo
 * Add Docker Compose definitions for all services (cache-gateway, db-fetcher, config-server)
 * Add integration tests (Redis + Postgres + services)
 * Explore **service discovery** (Eureka / Consul) instead of hardcoding hostnames
+* Improve cache eviction / fallback strategies
 
-```
+---

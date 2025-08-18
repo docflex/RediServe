@@ -1,44 +1,44 @@
 package com.cachegateway.service;
 
 import com.cachegateway.models.Product;
+import com.cachegateway.policy.Policy;
+import com.cachegateway.policy.PolicyRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.time.Duration;
 
 @Slf4j
 @Service
 public class CacheService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final WebClient webClient;
-    private final ObjectMapper objectMapper;
+    private final PolicyRegistry policyRegistry;
 
     public CacheService(
-            StringRedisTemplate redisTemplate,
-            ObjectMapper objectMapper,
-            @Value("${services.dbfetcher.url}") String dbFetcherUrl) {
+            RedisTemplate<String, Object> redisTemplate,
+            @Value("${services.dbfetcher.url}") String dbFetcherUrl,
+            PolicyRegistry policyRegistry) {
 
         this.redisTemplate = redisTemplate;
         this.webClient = WebClient.builder().baseUrl(dbFetcherUrl).build();
-        this.objectMapper = objectMapper;
+        this.policyRegistry = policyRegistry;
     }
 
-    public Product getProduct(String namespace, String entity, Long id) throws Exception {
+    public Product getProduct(String namespace, String entity, Long id) {
         String key = namespace + ":" + entity + ":" + id;
+        Policy policy = policyRegistry.getPolicy(namespace);
 
-        // 1. Try cache
-        String cachedValue = redisTemplate.opsForValue().get(key);
-        if (cachedValue != null) {
+        // Try cache
+        Object cachedValue = redisTemplate.opsForValue().get(key);
+        if (cachedValue instanceof Product product) {
             log.info("[CACHE-HIT] key={}", key);
-            return objectMapper.readValue(cachedValue, Product.class);
+            return product;
         }
 
-        // 2. Cache miss → fetch from db-fetcher
+        // Cache miss → fetch from DB-Fetcher
         log.info("[CACHE-MISS] key={}, fetching from DB-Fetcher...", key);
 
         Product product = webClient.get()
@@ -48,12 +48,12 @@ public class CacheService {
                 .block();
 
         if (product != null) {
-            // 3. Store in Redis with TTL (60s for now)
-            redisTemplate.opsForValue()
-                    .set(key, objectMapper.writeValueAsString(product), Duration.ofSeconds(60));
-            log.info("[CACHE-STORE] key={} stored in Redis with TTL=60s", key);
+            redisTemplate.opsForValue().set(key, product,
+                    java.time.Duration.ofSeconds(policy.getTtlSeconds()));
+            log.info("[CACHE-STORE] key={} stored in Redis with TTL={}s", key, policy.getTtlSeconds());
         }
 
         return product;
     }
+
 }
