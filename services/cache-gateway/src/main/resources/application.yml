@@ -3,12 +3,3 @@ spring:
     name: cache-gateway
   config:
     import: optional:configserver:http://localhost:8888
-
-cache:
-  policies:
-    default:
-      ttl: 60
-      consistency: ASIDE
-    tenant42:
-      ttl: 120
-      consistency: READ_THROUGH

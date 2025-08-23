@@ -10,6 +10,15 @@ spring:
       port: 6379
       timeout: 60000
 
+cache:
+  policies:
+    default:
+      ttl: 60
+      consistency: ASIDE
+    tenant42:
+      ttl: 120
+      consistency: READ_THROUGH
+
 services:
   dbfetcher:
     url: http://localhost:8082
