@@ -1,6 +1,0 @@
-server:
-  port: 8083
-
-services:
-  cachegateway:
-    url: http://localhost:8081

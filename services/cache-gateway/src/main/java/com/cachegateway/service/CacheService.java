@@ -1,8 +1,8 @@
 package com.cachegateway.service;
 
 import com.cachegateway.models.Product;
-import com.cachegateway.policy.Policy;
-import com.cachegateway.policy.PolicyRegistry;
+import common.cache.policy.Policy;
+import common.cache.policy.PolicyRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -49,8 +49,8 @@ public class CacheService {
 
         if (product != null) {
             redisTemplate.opsForValue().set(key, product,
-                    java.time.Duration.ofSeconds(policy.getTtlSeconds()));
-            log.info("[CACHE-STORE] key={} stored in Redis with TTL={}s", key, policy.getTtlSeconds());
+                    java.time.Duration.ofSeconds(policy.ttlSeconds()));
+            log.info("[CACHE-STORE] key={} stored in Redis with TTL={}s", key, policy.ttlSeconds());
         }
 
         return product;

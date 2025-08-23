@@ -1,4 +1,4 @@
-package com.cachegateway.policy;
+package common.cache.policy;
 
 public enum ConsistencyMode {
     ASIDE,         // Cache-Aside (fetch from DB on miss, then populate cache)

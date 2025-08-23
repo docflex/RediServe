@@ -1,13 +1,12 @@
 server:
-  port: 8081
+  port: 8083
 
 spring:
-  application-name: cache-gateway
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 60000
+  application-name: orchestrator
+
+services:
+  cachegateway:
+    url: http://localhost:8081
 
 cache:
   policies:
@@ -15,12 +14,8 @@ cache:
       ttl: 60
       consistency: ASIDE
     tenant42:
-      ttl: 120
+      ttl: 110
       consistency: READ_THROUGH
-
-services:
-  dbfetcher:
-    url: http://localhost:8082
 
 management:
   endpoints:
