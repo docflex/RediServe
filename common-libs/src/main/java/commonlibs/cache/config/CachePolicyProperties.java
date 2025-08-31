@@ -1,6 +1,6 @@
-package common.cache.config;
+package commonlibs.cache.config;
 
-import common.cache.policy.ConsistencyMode;
+import commonlibs.cache.policy.ConsistencyMode;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;

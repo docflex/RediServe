@@ -1,7 +1,7 @@
 package com.orchestrator.controller;
 
-import common.cache.policy.Policy;
-import common.cache.policy.PolicyRegistry;
+import commonlibs.cache.policy.Policy;
+import commonlibs.cache.policy.PolicyRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;

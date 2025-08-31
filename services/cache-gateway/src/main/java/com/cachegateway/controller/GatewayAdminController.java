@@ -1,7 +1,7 @@
 package com.cachegateway.controller;
 
-import common.cache.policy.Policy;
-import common.cache.policy.PolicyRegistry;
+import commonlibs.cache.policy.Policy;
+import commonlibs.cache.policy.PolicyRegistry;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 

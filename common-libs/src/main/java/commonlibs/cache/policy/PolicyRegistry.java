@@ -1,6 +1,6 @@
-package common.cache.policy;
+package commonlibs.cache.policy;
 
-import common.cache.config.CachePolicyProperties;
+import commonlibs.cache.config.CachePolicyProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 

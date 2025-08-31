@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(scanBasePackages = {
         "com.orchestrator",
-        "common.cache"
+        "commonlibs.cache"
 })
 public class OrchestratorApplication {
     public static void main(String[] args) {

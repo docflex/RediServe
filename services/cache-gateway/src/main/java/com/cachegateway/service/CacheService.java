@@ -1,8 +1,8 @@
 package com.cachegateway.service;
 
 import com.cachegateway.models.Product;
-import common.cache.policy.Policy;
-import common.cache.policy.PolicyRegistry;
+import commonlibs.cache.policy.Policy;
+import commonlibs.cache.policy.PolicyRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
