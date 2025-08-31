@@ -3,6 +3,8 @@ server:
 
 spring:
   application-name: orchestrator
+  kafka:
+    bootstrap-servers: localhost:9092
 
 services:
   cachegateway:
