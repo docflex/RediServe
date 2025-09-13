@@ -89,7 +89,7 @@ docker exec -it rediserve-postgres psql -U postgres -d rediserve
 ### Kafka
 
 ```bash
-docker exec -it rediserve-kafka kafka-topics.sh --list --bootstrap-server localhost:9092
+docker exec -it rediserve-kafka /usr/bin/kafka-topics --list --bootstrap-server localhost:9092
 ```
 
 You should see topics like:
