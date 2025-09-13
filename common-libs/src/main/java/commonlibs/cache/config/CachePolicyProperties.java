@@ -9,18 +9,18 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
-@Setter
 @Getter
+@Setter
 @Configuration
 @ConfigurationProperties(prefix = "cache")
 public class CachePolicyProperties {
 
     private Map<String, PolicyConfig> policies = new HashMap<>();
 
-    @Setter
     @Getter
+    @Setter
     public static class PolicyConfig {
-        private long ttl;
-        private ConsistencyMode consistency;
+        private long ttl;                        // in seconds
+        private ConsistencyMode consistency = ConsistencyMode.ASIDE; // default
     }
 }

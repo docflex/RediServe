@@ -1,6 +1,6 @@
 package commonlibs.cache.policy;
 
 public enum ConsistencyMode {
-    ASIDE,         // Cache-Aside (fetch from DB on miss, then populate cache)
-    READ_THROUGH;  // Read-Through (cache layer fetches from DB automatically)
+    ASIDE,        // Cache-Aside (fetch from DB on miss)
+    READ_THROUGH; // Read-Through (auto-fetch from DB)
 }

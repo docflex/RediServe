@@ -1,26 +1,38 @@
+# ================================
+# Orchestrator Configuration
+# ================================
+
 server:
   port: 8083
 
 spring:
   application-name: orchestrator
+
+  # Kafka configuration
   kafka:
     bootstrap-servers: localhost:9092
 
+    # Trusted Packages for JSON deserialization
+    trusted-packages: "commonlibs.cache.policy"
+
+# Downstream service URLs
 services:
   cachegateway:
     url: http://localhost:8081
 
+# Default cache policies (used for initial seeding / fallback)
 cache:
   policies:
     default:
-      ttl: 60
+      ttl: 60           # TTL in seconds
       consistency: ASIDE
     tenant42:
       ttl: 110
       consistency: READ_THROUGH
 
+# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,refresh,beans,env
+        include: health, info, refresh, beans, env

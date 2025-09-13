@@ -9,6 +9,15 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
+/**
+ * Kafka listener for cache policy updates and namespace invalidations.
+ *
+ * <p>
+ * Listens for events from Kafka topics and updates the PolicyRegistry
+ * or invalidates Redis keys accordingly.
+ */
 @Service
 @Slf4j
 public class PolicyEventListener {
@@ -21,6 +30,12 @@ public class PolicyEventListener {
         this.redisTemplate = redisTemplate;
     }
 
+    /**
+     * Handles updates to cache policies for a namespace.
+     *
+     * @param policy    the updated policy object
+     * @param namespace the namespace key from the Kafka message
+     */
     @KafkaListener(
             topics = "cache.policy.updates",
             groupId = "cache-gateway-policy-group",
@@ -29,19 +44,27 @@ public class PolicyEventListener {
     public void handlePolicyUpdate(Policy policy,
                                    @Header(KafkaHeaders.RECEIVED_KEY) String namespace) {
         policyRegistry.updatePolicy(namespace, policy);
-        log.info("[GATEWAY] Policy updated via Kafka for ns={}", namespace);
+        log.info("[GATEWAY] Policy updated via Kafka for namespace={}", namespace);
     }
 
+    /**
+     * Handles namespace invalidation events.
+     * Deletes all Redis keys for the given namespace.
+     *
+     * @param namespace the namespace to invalidate
+     */
     @KafkaListener(
             topics = "cache.namespace.invalidate",
             groupId = "cache-gateway-invalidate-group",
-            containerFactory = "stringKafkaListenerContainerFactory")
+            containerFactory = "stringKafkaListenerContainerFactory"
+    )
     public void handleInvalidate(String namespace) {
         String pattern = namespace + ":*";
-        var keys = redisTemplate.keys(pattern);
+        Set<String> keys = redisTemplate.keys(pattern);
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
         }
-        log.info("[GATEWAY] Namespace invalidated via Kafka: {}", namespace);
+        log.info("[GATEWAY] Namespace invalidated via Kafka: {} ({} keys removed)",
+                namespace, keys != null ? keys.size() : 0);
     }
 }

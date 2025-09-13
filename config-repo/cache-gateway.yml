@@ -1,38 +1,55 @@
+# ================================
+# Cache Gateway Configuration
+# ================================
+
 server:
   port: 8081
 
 spring:
   application-name: cache-gateway
+
+  # Redis configuration
   data:
     redis:
       host: localhost
       port: 6379
       timeout: 60000
+
+  # Kafka configuration
   kafka:
     bootstrap-servers: localhost:9092
+
+    # Consumer groups
     consumer:
-      group-id: cache-gateway
+      default-group-id: cache-gateway
+      policy-group-id: cache-gateway-policy-group
+      invalidate-group-id: cache-gateway-invalidate-group
+
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
 
+    # Trusted Packages
+    trusted-packages: "commonlibs.cache.policy"
+
+# Cache policies per namespace
 cache:
   policies:
     default:
-      ttl: 60
+      ttl: 60           # TTL in seconds
       consistency: ASIDE
     tenant42:
       ttl: 120
       consistency: READ_THROUGH
 
+# Downstream service URLs
 services:
   dbfetcher:
     url: http://localhost:8082
 
+# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,refresh,beans,env
+        include: health, info, refresh, beans, env

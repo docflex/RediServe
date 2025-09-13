@@ -1,22 +1,36 @@
+# ================================
+# DB Fetcher Configuration
+# ================================
+
 server:
   port: 8082
 
 spring:
   application-name: db-fetcher
+
+  # Datasource configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/rediserve
     username: rediserve
     password: rediserve
+
+  # JPA / Hibernate configuration
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
-        dialect=org:
-          hibernate:
-            dialect: PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
+# Downstream service URLs
 services:
   cachegateway:
     url: http://localhost:8081
+
+# Management endpoints (optional, keep uniform)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, refresh, beans, env
