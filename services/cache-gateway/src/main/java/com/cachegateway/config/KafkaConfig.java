@@ -1,7 +1,7 @@
 package com.cachegateway.config;
 
 import commonlibs.cache.policy.Policy;
-import commonlibs.kafka.KafkaCommonConfig;
+import commonlibs.kafka.config.KafkaCommonConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

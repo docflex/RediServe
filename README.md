@@ -130,7 +130,7 @@ http://localhost:8888/orchestrator/default
 ### 1. Fetch Product (Cache-Gateway)
 
 ```bash
-curl -X GET "http://localhost:8080/cache/shop/products/1"
+curl -X GET "http://localhost:8081/cache/shop/products/1"
 ```
 
 * Reads from Redis if present.
@@ -141,7 +141,7 @@ curl -X GET "http://localhost:8080/cache/shop/products/1"
 ### 2. Update Policy (via Orchestrator → Kafka → Cache-Gateway)
 
 ```bash
-curl -X POST "http://localhost:8082/admin/namespaces/shop/policy" \
+curl -X POST "http://localhost:8083/admin/namespaces/shop/policy" \
   -H "Content-Type: application/json" \
   -d '{"ttlSeconds": 5, "consistencyMode": "READ_THROUGH"}'
 ```
@@ -155,7 +155,7 @@ curl -X POST "http://localhost:8082/admin/namespaces/shop/policy" \
 ### 3. Invalidate Namespace (via Orchestrator → Kafka → Cache-Gateway)
 
 ```bash
-curl -X POST "http://localhost:8082/admin/namespaces/shop/invalidate"
+curl -X POST "http://localhost:8083/admin/namespaces/shop/invalidate"
 ```
 
 * Orchestrator publishes to `cache.namespace.invalidate`.

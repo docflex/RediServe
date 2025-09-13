@@ -1,13 +1,16 @@
 package com.cachegateway.controller;
 
-import com.cachegateway.models.Product;
 import com.cachegateway.service.CacheService;
+import commonlibs.dto.ProductDTO;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * REST controller for cache access.
  * <p>
- * Exposes endpoints to read cached entities, falling back to DB-fetch if cache miss occurs.
+ * Exposes endpoints to read cached entities, falling back to DB-fetch if a cache miss occurs.
  */
 @RestController
 @RequestMapping("/cache")
@@ -20,18 +23,24 @@ public class CacheController {
     }
 
     /**
-     * Fetches an entity from cache or DB fallback.
+     * Fetches an entity from cache, or requests it from DB if not cached.
      *
      * @param namespace The cache namespace
      * @param entity    The entity type (e.g., "products")
      * @param id        The entity ID
-     * @return Product object from cache or DB
-     * @throws Exception if retrieval fails
+     * @return CompletableFuture of ResponseEntity<ProductDTO>
      */
     @GetMapping("/{namespace}/{entity}/{id}")
-    public Product getFromCache(@PathVariable String namespace,
-                                @PathVariable String entity,
-                                @PathVariable Long id) throws Exception {
-        return cacheService.getProduct(namespace, entity, id);
+    public CompletableFuture<ResponseEntity<ProductDTO>> getFromCache(@PathVariable String namespace,
+                                                                      @PathVariable String entity,
+                                                                      @PathVariable Long id) {
+        return cacheService.getProductAsync(namespace, entity, id)
+                .thenApply(product -> {
+                    if (product != null) {
+                        return ResponseEntity.ok(product);
+                    } else {
+                        return ResponseEntity.notFound().build();
+                    }
+                });
     }
 }

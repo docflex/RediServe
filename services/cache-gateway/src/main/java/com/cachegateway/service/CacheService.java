@@ -1,79 +1,99 @@
 package com.cachegateway.service;
 
-import com.cachegateway.models.Product;
 import commonlibs.cache.policy.Policy;
 import commonlibs.cache.policy.PolicyRegistry;
+import commonlibs.dto.ProductDTO;
+import commonlibs.kafka.messages.ProductFetchRequest;
+import commonlibs.kafka.messages.ProductFetchResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Service to handle caching of Products with Redis, based on
- * policies defined per namespace.
- *
- * <p>Implements a simple cache-aside pattern: attempts to read from
- * Redis first, then falls back to DB-Fetcher if cache miss occurs.
- * Stores the fetched value in Redis according to the TTL defined
- * in the policy.
- */
 @Slf4j
 @Service
 public class CacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final WebClient webClient;
     private final PolicyRegistry policyRegistry;
+    private final ProductFetchRequestGateway requestGateway;
 
-    public CacheService(
-            RedisTemplate<String, Object> redisTemplate,
-            @Value("${services.dbfetcher.url}") String dbFetcherUrl,
-            PolicyRegistry policyRegistry) {
+    // Track pending requests by correlationId
+    private final Map<String, CompletableFuture<ProductDTO>> pendingRequests = new ConcurrentHashMap<>();
 
+    public CacheService(RedisTemplate<String, Object> redisTemplate,
+                        PolicyRegistry policyRegistry,
+                        ProductFetchRequestGateway requestGateway) {
         this.redisTemplate = redisTemplate;
-        this.webClient = WebClient.builder()
-                .baseUrl(dbFetcherUrl)
-                .build();
         this.policyRegistry = policyRegistry;
+        this.requestGateway = requestGateway;
     }
 
     /**
-     * Fetch a Product either from Redis cache or from DB-Fetcher service.
-     * Caches the value according to the namespace policy.
+     * Non-blocking fetch: returns a CompletableFuture immediately.
+     * If cache hit occurs, future is completed immediately.
+     * If cache miss, sends Kafka request and completes future on response.
      *
-     * @param namespace the cache namespace
-     * @param entity    the entity type (e.g., "product")
-     * @param id        the entity ID
-     * @return the Product object, or null if not found
+     * @param namespace Cache namespace
+     * @param entity    Entity type (e.g., "products")
+     * @param id        Product ID
+     * @return CompletableFuture of ProductDTO
      */
-    public Product getProduct(String namespace, String entity, Long id) {
-        String key = namespace + ":" + entity + ":" + id;
+    public CompletableFuture<ProductDTO> getProductAsync(String namespace, String entity, Long id) {
+        String key = buildKey(namespace, entity, id);
         Policy policy = policyRegistry.getPolicy(namespace);
 
-        // Attempt to fetch from Redis cache
         Object cachedValue = redisTemplate.opsForValue().get(key);
-        if (cachedValue instanceof Product product) {
+        if (cachedValue instanceof ProductDTO product) {
             log.info("[CACHE-HIT] key={}", key);
-            return product;
+            return CompletableFuture.completedFuture(product);
         }
 
-        // Cache miss → fetch from DB-Fetcher service
-        log.info("[CACHE-MISS] key={}, fetching from DB-Fetcher...", key);
-        Product product = webClient.get()
-                .uri("/products/{id}", id)
-                .retrieve()
-                .bodyToMono(Product.class)
-                .block();
+        log.info("[CACHE-MISS] key={}, sending Kafka fetch request...", key);
 
-        // Store in Redis if found
-        if (product != null) {
-            redisTemplate.opsForValue().set(key, product, Duration.ofSeconds(policy.ttlSeconds()));
-            log.info("[CACHE-STORE] key={} stored in Redis with TTL={}s", key, policy.ttlSeconds());
+        String correlationId = UUID.randomUUID().toString();
+        CompletableFuture<ProductDTO> future = new CompletableFuture<>();
+        pendingRequests.put(correlationId, future);
+
+        ProductFetchRequest request = new ProductFetchRequest(correlationId, id);
+        requestGateway.sendRequest(request);
+
+        // Complete future asynchronously when cache is updated
+        future.thenAccept(product -> {
+            if (product != null) {
+                redisTemplate.opsForValue().set(key, product, Duration.ofSeconds(policy.ttlSeconds()));
+                log.info("[CACHE-STORE] key={} stored in Redis with TTL={}s", key, policy.ttlSeconds());
+            }
+        }).exceptionally(ex -> {
+            pendingRequests.remove(correlationId);
+            log.error("Failed to fetch product for correlationId={}", correlationId, ex);
+            return null;
+        });
+
+        return future;
+    }
+
+    /**
+     * Called by Kafka listener when a response arrives.
+     * Completes the corresponding pending future if exists.
+     */
+    public boolean completePendingRequest(ProductFetchResponse response) {
+        var future = pendingRequests.remove(response.getCorrelationId());
+        if (future != null) {
+            future.complete(response.getProduct());
+            return true;
+        } else {
+            log.warn("Late or unknown response received for correlationId={}", response.getCorrelationId());
+            return false;
         }
+    }
 
-        return product;
+    private String buildKey(String namespace, String entity, Long id) {
+        return String.format("%s:%s:%d", namespace, entity, id);
     }
 }

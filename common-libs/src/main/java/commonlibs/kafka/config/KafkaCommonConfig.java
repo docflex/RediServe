@@ -1,4 +1,4 @@
-package commonlibs.kafka;
+package commonlibs.kafka.config;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;

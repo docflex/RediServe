@@ -8,6 +8,21 @@ server:
 spring:
   application-name: db-fetcher
 
+  # Kafka configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    # Trusted Packages for JSON deserialization
+    trusted-packages: "commonlibs.cache.policy"
+
+    consumer:
+      group-id: db-fetcher-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: commonlibs.kafka.messages.ProductFetchRequest
+
   # Datasource configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/rediserve
